@@ -196,6 +196,46 @@ python -u run.py --task_name anomaly_detection --is_training 1 --root_path ./dat
 python -u run.py --task_name classification --is_training 1 --root_path ./dataset/Heartbeat/ --model_id Heartbeat --model TimesNet --data UEA --e_layers 2 --d_layers 1 --factor 3 --d_model 64 --d_ff 128 --top_k 3 --train_epochs 1 --batch_size 16 --learning_rate 0.001 --num_workers 0
 ```
 
+### 日志与 TensorBoard
+
+每次执行 `run.py`，默认将 UTF-8 文本日志写入 `./logs/`，将 TensorBoard
+事件写入 `./runs/`，已有脚本无需修改。名称包含任务、模型、实验标识、
+输入/预测长度、时间及进程 ID；`--itr` 的每次重复实验使用独立的
+`iteration_N` 事件目录，避免曲线混在一起。
+
+文本日志保存参数、运行时版本、Python 终端输出、训练进度及参数解析后的
+未捕获异常，文件会去除终端颜色转义符；不捕获原生文件描述符或子进程输出。
+TensorBoard 记录每轮 loss、学习率、耗时和最终评估指标；分类任务额外记录
+准确率。M4 汇总指标在六个季节子集的预测文件齐全后才会产生。
+
+```bash
+# 正常运行实验，在另一个终端启动 TensorBoard
+bash scripts/long_term_forecast/ETT_script/TimeMixer_ETTm1.sh
+tensorboard --logdir ./runs --port 6006
+```
+
+打开 http://localhost:6006 查看曲线。可向 `run.py` 添加参数：
+`--log_dir ./logs`、`--tensorboard_dir ./runs`、`--log_level INFO`；
+`--no_tensorboard` 仅关闭 TensorBoard，保留文本日志。
+日志级别过滤文件和 logger 输出（stdout 为 INFO，stderr 为 WARNING），
+不影响 TensorBoard 指标或原有终端打印。TensorBoard 已在依赖清单中。
+
+所有模型通过对应实验管线共用独立模块 `utils/logger.py`。新增网络或任务
+可直接调用，不需要各自创建日志文件或 SummaryWriter：
+
+```python
+from utils.logger import get_logger, log_metrics
+
+logger = get_logger(__name__)
+logger.info("模型初始化完成")
+log_metrics({"loss/train": loss.item()}, step=epoch + 1)
+```
+
+指标应由主训练进程写入，不要在 DataLoader worker 中写入。
+`run.py` 统一负责初始化、重复实验切换、刷新和关闭。独立调用时可使用
+`experiment_logging(args)` 上下文和 `start_experiment(args)`。
+回归测试命令：`python -m unittest discover -s tests -p 'test_*.py'`。
+
 ### 训练与评测
 
 `./scripts/` 目录下提供了全部基准的实验脚本，可参考下列示例复现实验：

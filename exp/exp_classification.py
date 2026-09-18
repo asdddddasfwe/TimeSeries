@@ -1,3 +1,4 @@
+from utils.logger import log_metrics
 from data_provider.data_factory import data_provider
 from exp.exp_basic import Exp_Basic
 from utils.tools import EarlyStopping, adjust_learning_rate, cal_accuracy
@@ -132,6 +133,13 @@ class Exp_Classification(Exp_Basic):
             print(
                 "Epoch: {0}, Steps: {1} | Train Loss: {2:.3f} Vali Loss: {3:.3f} Vali Acc: {4:.3f} Test Loss: {5:.3f} Test Acc: {6:.3f}"
                 .format(epoch + 1, train_steps, train_loss, vali_loss, val_accuracy, test_loss, test_accuracy))
+            log_metrics({
+                "loss/train": train_loss, "loss/val": vali_loss,
+                "loss/test": test_loss,
+                "accuracy/val": val_accuracy, "accuracy/test": test_accuracy,
+                "learning_rate": model_optim.param_groups[0]["lr"],
+                "time/epoch_seconds": time.time() - epoch_time,
+            }, step=epoch + 1)
             early_stopping(-val_accuracy, self.model, path)
             if early_stopping.early_stop:
                 print("Early stopping")
@@ -180,6 +188,7 @@ class Exp_Classification(Exp_Basic):
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
+        log_metrics({"accuracy": accuracy}, prefix="test")
         print('accuracy:{}'.format(accuracy))
         file_name='result_classification.txt'
         f = open(os.path.join(folder_path,file_name), 'a')

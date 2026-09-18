@@ -1,3 +1,4 @@
+from utils.logger import log_metrics
 from data_provider.data_factory import data_provider
 from exp.exp_basic import Exp_Basic
 from utils.tools import EarlyStopping, adjust_learning_rate, visual
@@ -124,6 +125,10 @@ class Exp_Zero_Shot_Forecast(Exp_Basic):
             dtw = 'Not calculated'
 
         mae, mse, rmse, mape, mspe = metric(preds, trues)
+        log_metrics({"mae": mae, "mse": mse, "rmse": rmse,
+                     "mape": mape, "mspe": mspe}, prefix="test")
+        if self.args.use_dtw:
+            log_metrics({"dtw": dtw}, prefix="test")
         print('mse:{}, mae:{}, dtw:{}'.format(mse, mae, dtw))
         f = open("result_zero_shot_forecast_search.txt", 'a')
         f.write(setting + "  \n")

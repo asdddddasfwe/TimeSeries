@@ -203,6 +203,49 @@ python -u run.py --task_name classification --is_training 1 --root_path ./datase
 ```
 
 
+### Logging and TensorBoard
+
+Every `run.py` invocation automatically saves a UTF-8 text log under `./logs/`
+and TensorBoard events under `./runs/`. Existing shell scripts need no changes.
+Names include the task, model, model ID, sequence/prediction lengths, timestamp,
+and process ID. Repetitions (`--itr`) use separate `iteration_N` event directories.
+
+Text logs include arguments, runtime versions, existing Python console output,
+training progress, and uncaught exceptions after argument parsing. Terminal
+colors are removed from files. Native subprocess/file-descriptor output is not
+captured. TensorBoard records epoch losses, learning rate, epoch duration, and
+task-specific evaluation metrics; classification also records accuracy.
+M4 aggregate metrics appear only once all six seasonal forecasts are available.
+
+```bash
+# Run an existing experiment, then start TensorBoard in another terminal.
+bash scripts/long_term_forecast/ETT_script/TimeMixer_ETTm1.sh
+tensorboard --logdir ./runs --port 6006
+```
+
+Open http://localhost:6006. Optional `run.py` flags: `--log_dir ./logs`,
+`--tensorboard_dir ./runs`, `--log_level INFO`, and `--no_tensorboard`.
+The log level filters text records (captured stdout is INFO; stderr is WARNING);
+it does not filter TensorBoard metrics or existing terminal prints.
+TensorBoard is already listed in `requirements.txt`.
+
+All models share `utils/logger.py` through their task's experiment pipeline.
+Custom models/tasks can call the same API without creating their own writers:
+
+```python
+from utils.logger import get_logger, log_metrics
+
+logger = get_logger(__name__)
+logger.info("Model initialized")
+log_metrics({"loss/train": loss.item()}, step=epoch + 1)
+```
+
+Call metrics from the main training process, not DataLoader workers. `run.py`
+manages setup, repetition boundaries, flushing, and cleanup. Standalone callers
+can use `experiment_logging(args)` and `start_experiment(args)`; text logging
+does not require TensorBoard. Run logger regression tests with
+`python -m unittest discover -s tests -p 'test_*.py'`.
+
 ### Train and Evaluate
 
 We provide the experiment scripts for all benchmarks under the folder `./scripts/`. You can reproduce the experiment results as the following examples:

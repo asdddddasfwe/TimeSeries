@@ -1,3 +1,4 @@
+from utils.logger import log_metrics
 from data_provider.data_factory import data_provider
 from exp.exp_basic import Exp_Basic
 from utils.tools import EarlyStopping, adjust_learning_rate, visual
@@ -153,6 +154,12 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, test_loss))
+            log_metrics({
+                "loss/train": train_loss, "loss/val": vali_loss,
+                "loss/test": test_loss,
+                "learning_rate": model_optim.param_groups[0]["lr"],
+                "time/epoch_seconds": time.time() - epoch_time,
+            }, step=epoch + 1)
             early_stopping(vali_loss, self.model, path)
             if early_stopping.early_stop:
                 print("Early stopping")
@@ -253,6 +260,10 @@ class Exp_Long_Term_Forecast(Exp_Basic):
             dtw = 'Not calculated'
 
         mae, mse, rmse, mape, mspe = metric(preds, trues)
+        log_metrics({"mae": mae, "mse": mse, "rmse": rmse,
+                     "mape": mape, "mspe": mspe}, prefix="test")
+        if self.args.use_dtw:
+            log_metrics({"dtw": dtw}, prefix="test")
         print('mse:{}, mae:{}, dtw:{}'.format(mse, mae, dtw))
         f = open("result_long_term_forecast.txt", 'a')
         f.write(setting + "  \n")

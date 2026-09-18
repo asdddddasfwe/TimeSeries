@@ -1,3 +1,4 @@
+from utils.logger import log_metrics
 from data_provider.data_factory import data_provider
 from data_provider.m4 import M4Meta
 from exp.exp_basic import Exp_Basic
@@ -114,6 +115,11 @@ class Exp_Short_Term_Forecast(Exp_Basic):
             test_loss = vali_loss
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, test_loss))
+            log_metrics({
+                "loss/train": train_loss, "loss/val": vali_loss,
+                "learning_rate": model_optim.param_groups[0]["lr"],
+                "time/epoch_seconds": time.time() - epoch_time,
+            }, step=epoch + 1)
             early_stopping(vali_loss, self.model, path)
             if early_stopping.early_stop:
                 print("Early stopping")
@@ -226,6 +232,8 @@ class Exp_Short_Term_Forecast(Exp_Basic):
             m4_summary = M4Summary(file_path, self.args.root_path)
             # m4_forecast.set_index(m4_winner_forecast.columns[0], inplace=True)
             smape_results, owa_results, mape, mase = m4_summary.evaluate()
+            log_metrics({"smape": smape_results, "mape": mape,
+                         "mase": mase, "owa": owa_results}, prefix="test")
             print('smape:', smape_results)
             print('mape:', mape)
             print('mase:', mase)

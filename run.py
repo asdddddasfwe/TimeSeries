@@ -1,17 +1,11 @@
 import argparse
 import os
-import torch
-import torch.backends
 from utils.print_args import print_args
 import random
-import numpy as np
+from utils.logger import experiment_logging, start_experiment
 
-if __name__ == '__main__':
-    fix_seed = 2021
-    random.seed(fix_seed)
-    torch.manual_seed(fix_seed)
-    np.random.seed(fix_seed)
 
+def main():
     parser = argparse.ArgumentParser(description='TimesNet')
 
     # basic config
@@ -21,6 +15,19 @@ if __name__ == '__main__':
     parser.add_argument('--model_id', type=str, required=True, default='test', help='model id')
     parser.add_argument('--model', type=str, required=True, default='Autoformer',
                         help='model name, options: [Autoformer, Transformer, TimesNet]')
+
+    # logging
+    parser.add_argument('--log_dir', type=str, default='./logs',
+                        help='directory for per-run log files')
+    parser.add_argument('--log_level', type=str.upper, default='INFO',
+                        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+                        help='file and logger verbosity; existing terminal prints are preserved')
+
+    parser.add_argument('--tensorboard_dir', type=str, default='./runs',
+                        help='directory for TensorBoard event files')
+    parser.add_argument('--no_tensorboard', action='store_false', dest='tensorboard',
+                        help='disable TensorBoard while keeping text logs')
+    parser.set_defaults(tensorboard=True)
 
     # data loader
     parser.add_argument('--data', type=str, required=True, default='ETTh1', help='dataset type')
@@ -157,6 +164,22 @@ if __name__ == '__main__':
     parser.add_argument('--pos', type=int, choices=[0, 1], default=1, help='Positional Embedding. Set pos to 0 or 1')
 
     args = parser.parse_args()
+    with experiment_logging(args) as logger:
+        run_experiment(args, logger)
+
+
+def run_experiment(args, logger):
+    # Import after logging starts so dependency failures are saved as well.
+    import torch
+    import torch.backends
+    import numpy as np
+
+    fix_seed = 2021
+    random.seed(fix_seed)
+    torch.manual_seed(fix_seed)
+    np.random.seed(fix_seed)
+    logger.info("Runtime: torch=%s, CUDA=%s, seed=%s",
+                torch.__version__, torch.version.cuda, fix_seed)
     if torch.cuda.is_available() and args.use_gpu:
         args.device = torch.device('cuda:{}'.format(args.gpu))
         print('Using GPU')
@@ -203,6 +226,7 @@ if __name__ == '__main__':
         for ii in range(args.itr):
             # setting record of experiments
             exp = Exp(args)  # set experiments
+            start_experiment(args, iteration=ii)
             setting = '{}_{}_{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_expand{}_dc{}_fc{}_eb{}_dt{}_{}_{}'.format(
                 args.task_name,
                 args.model_id,
@@ -244,6 +268,7 @@ if __name__ == '__main__':
     else:
         exp = Exp(args)  # set experiments
         ii = 0
+        start_experiment(args, iteration=ii)
         setting = '{}_{}_{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_expand{}_dc{}_fc{}_eb{}_dt{}_{}_{}'.format(
             args.task_name,
             args.model_id,
@@ -279,3 +304,7 @@ if __name__ == '__main__':
                 torch.backends.mps.empty_cache()
             elif args.gpu_type == 'cuda':
                 torch.cuda.empty_cache()
+
+
+if __name__ == '__main__':
+    main()

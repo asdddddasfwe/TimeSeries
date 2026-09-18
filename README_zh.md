@@ -196,6 +196,12 @@ python -u run.py --task_name anomaly_detection --is_training 1 --root_path ./dat
 python -u run.py --task_name classification --is_training 1 --root_path ./dataset/Heartbeat/ --model_id Heartbeat --model TimesNet --data UEA --e_layers 2 --d_layers 1 --factor 3 --d_model 64 --d_ff 128 --top_k 3 --train_epochs 1 --batch_size 16 --learning_rate 0.001 --num_workers 0
 ```
 
+### TimeMixer++（基于论文实现）
+
+新增 `--model TimeMixerPP`，支持五类监督任务并复用统一日志和 TensorBoard。
+请阅读[实现说明与运行脚本](docs/TimeMixerPP.md)，其中说明了论文结构对应、
+实现取舍、ETTm1/M4 运行方法与复现范围。
+
 ### 日志与 TensorBoard
 
 每次执行 `run.py`，默认将 UTF-8 文本日志写入 `./logs/`，将 TensorBoard

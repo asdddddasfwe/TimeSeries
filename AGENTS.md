@@ -25,7 +25,7 @@ Use four-space Python indentation and follow nearby code. Prefer `snake_case` fo
 
 ## Testing Guidelines
 
-Logger regression tests use standard-library `unittest` in `tests/test_logger.py`. Run `python -m unittest discover -s tests -p 'test_*.py'`; TensorBoard event tests require the project dependencies. No coverage threshold is configured. Validate model changes with README quick tests and reproduction scripts. Report commands, datasets, devices, seeds, and metrics; check output shapes and finite losses.
+Model and logger regression tests use standard-library `unittest` in `tests/`. Run `python -m unittest discover -s tests -p 'test_*.py'`; TensorBoard event tests require the project dependencies. No coverage threshold is configured. Validate model changes with README quick tests and reproduction scripts. Report commands, datasets, devices, seeds, and metrics; check output shapes and finite losses.
 
 ## Commit & Pull Request Guidelines
 

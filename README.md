@@ -203,6 +203,13 @@ python -u run.py --task_name classification --is_training 1 --root_path ./datase
 ```
 
 
+### TimeMixer++ (paper-based implementation)
+
+Use `--model TimeMixerPP` for the independent TimeMixer++ implementation. It supports
+the five supervised tasks and shares the existing logging/TensorBoard pipeline.
+See [implementation notes and scripts](docs/TimeMixerPP.md) for architecture choices,
+ETTm1/M4 commands, tests, and reproduction limits.
+
 ### Logging and TensorBoard
 
 Every `run.py` invocation automatically saves a UTF-8 text log under `./logs/`

@@ -6,10 +6,10 @@ seq_len=96
 e_layers=2
 down_sampling_layers=3
 down_sampling_window=2
-learning_rate=0.01
+learning_rate=0.02
 d_model=16
 d_ff=32
-batch_size=16
+batch_size=128
 
 python -u run.py \
   --task_name long_term_forecast \
@@ -32,6 +32,7 @@ python -u run.py \
   --d_ff $d_ff \
   --batch_size $batch_size \
   --learning_rate $learning_rate \
+  --lradj cosine \
   --down_sampling_layers $down_sampling_layers \
   --down_sampling_method avg \
   --down_sampling_window $down_sampling_window
@@ -58,6 +59,7 @@ python -u run.py \
   --d_ff $d_ff \
   --batch_size $batch_size \
   --learning_rate $learning_rate \
+  --lradj cosine \
   --down_sampling_layers $down_sampling_layers \
   --down_sampling_method avg \
   --down_sampling_window $down_sampling_window
@@ -84,6 +86,7 @@ python -u run.py \
   --d_ff $d_ff \
   --batch_size $batch_size \
   --learning_rate $learning_rate \
+  --lradj cosine \
   --down_sampling_layers $down_sampling_layers \
   --down_sampling_method avg \
   --down_sampling_window $down_sampling_window
@@ -110,6 +113,7 @@ python -u run.py \
   --d_ff $d_ff \
   --batch_size $batch_size \
   --learning_rate $learning_rate \
+  --lradj cosine \
   --down_sampling_layers $down_sampling_layers \
   --down_sampling_method avg \
   --down_sampling_window $down_sampling_window

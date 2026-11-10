@@ -168,3 +168,6 @@ run_anylearn.py
 environment.txt
 /logs/
 /runs/
+
+# Local LagARFormer research checkpoints, source snapshots, and TensorBoard events.
+/tmp

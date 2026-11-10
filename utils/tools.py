@@ -40,6 +40,10 @@ class EarlyStopping:
         self.delta = delta
 
     def __call__(self, val_loss, model, path):
+        if not math.isfinite(val_loss):
+            raise FloatingPointError(
+                f"Non-finite validation loss ({val_loss}); best checkpoint was not overwritten."
+            )
         score = -val_loss
         if self.best_score is None:
             self.best_score = score

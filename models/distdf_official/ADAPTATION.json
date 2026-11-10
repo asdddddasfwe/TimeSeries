@@ -1,0 +1,22 @@
+{
+  "RevIN.py": {
+    "upstream": "layers/RevIN.py",
+    "upstream_sha256": "e8e27bf444beaf7c0c3c5bf5ea515578750835aa2423c174cf6720e9ccdaed53",
+    "adaptation": "Relative imports only; Fredformer_backbone does not import or support unused NYS branch. ETT use_nys=0 unchanged."
+  },
+  "cross_Transformer.py": {
+    "upstream": "layers/cross_Transformer.py",
+    "upstream_sha256": "9c535d8761d513ab577349bad8f1f644c2e87754fc580bc4e9acc589337edaca",
+    "adaptation": "Relative imports only; Fredformer_backbone does not import or support unused NYS branch. ETT use_nys=0 unchanged."
+  },
+  "Fredformer_backbone.py": {
+    "upstream": "layers/Fredformer_backbone.py",
+    "upstream_sha256": "a25ceee35427dbfca69e097c9030dad1d29db83d4a5f738d59d8848161115d4c",
+    "adaptation": "Relative imports only; Fredformer_backbone does not import or support unused NYS branch. ETT use_nys=0 unchanged."
+  },
+  "Fredformer.py": {
+    "upstream": "models/Fredformer.py",
+    "upstream_sha256": "d0346f53ac7dfe11d7564b606de0c102ae658f24fb319a047879e4c41b9e497e",
+    "adaptation": "Relative imports only; Fredformer_backbone does not import or support unused NYS branch. ETT use_nys=0 unchanged."
+  }
+}

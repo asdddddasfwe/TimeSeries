@@ -91,6 +91,31 @@ def main():
     parser.add_argument('--seg_len', type=int, default=96,
                         help='the length of segmen-wise iteration of SegRNN')
 
+    # LagARFormer v5: four native resolutions and parallel lag messages.
+    parser.add_argument('--lag_max', type=int, default=0,
+                        help='LagARFormer: local-scale lag cap (clamped to T_i-1); 0 uses all local lags')
+    parser.add_argument('--lag_layers', type=int, default=2,
+                        help='LagARFormer number of synchronous lag-message layers')
+    parser.add_argument('--lag_chunk_size', type=int, default=8,
+                        help='LagARFormer lag computation chunk size; no lags are discarded')
+
+    parser.add_argument('--ssm_modes', type=int, default=8,
+                        help='OscillatorMixer: number of two-dimensional oscillator states per scale')
+    parser.add_argument('--ssm_dynamics_weight_decay', type=float, default=0.0,
+                        help='OscillatorMixer: decay for pole parameters and history conditioning network')
+    parser.add_argument('--lag_source_mode', choices=['none', 'additive', 'source'], default='source',
+                        help='LagARFormerSource decoder ablation; one resolution in every mode')
+    parser.add_argument('--lag_source_top_k', type=int, default=8,
+                        help='LagARFormerSource selected source offsets per future position')
+    parser.add_argument('--lag_acf_dropout', type=float, default=0.25, help='Training-only ACF omission for LagARFormerStableMix')
+    parser.add_argument('--lag_acf_strength', type=float, default=1.0, help='ACF feature attenuation for LagARFormerStableMix')
+    parser.add_argument('--lag_relation_weight_decay', type=float, default=-1.0,
+                        help='LagARFormer long-term Adam/AdamW: -1 inherits weight_decay; 0 disables decay only for lag embedding/projection')
+    parser.add_argument('--lag_monitor', action='store_true',
+                        help='LagARFormer long-term: log first-batch gradient norms and epoch validation ACF sensitivity')
+    parser.add_argument('--lag_monitor_samples', type=int, default=16,
+                        help='fixed uniformly spaced validation windows for lag_monitor')
+
     # optimization
     parser.add_argument('--num_workers', type=int, default=10, help='data loader num workers')
     parser.add_argument('--itr', type=int, default=1, help='experiments times')
@@ -98,6 +123,10 @@ def main():
     parser.add_argument('--batch_size', type=int, default=32, help='batch size of train input data')
     parser.add_argument('--patience', type=int, default=3, help='early stopping patience')
     parser.add_argument('--learning_rate', type=float, default=0.0001, help='optimizer learning rate')
+    parser.add_argument('--optimizer', type=str, default='adam', choices=['adam', 'adamw'],
+                        help='long-term forecasting optimizer; default preserves Adam')
+    parser.add_argument('--weight_decay', type=float, default=0.0,
+                        help='Adam L2 regularization for long_term_forecast (default: disabled)')
     parser.add_argument('--des', type=str, default='test', help='exp description')
     parser.add_argument('--loss', type=str, default='MSE', help='loss function')
     parser.add_argument('--lradj', type=str, default='type1', help='adjust learning rate')

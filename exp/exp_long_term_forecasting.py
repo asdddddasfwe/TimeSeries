@@ -1,4 +1,5 @@
-from utils.logger import log_metrics
+from utils.logger import log_metrics, get_logger
+from utils.training import require_finite_loss, require_finite_gradients
 from data_provider.data_factory import data_provider
 from exp.exp_basic import Exp_Basic
 from utils.tools import EarlyStopping, adjust_learning_rate, visual
@@ -32,7 +33,22 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         return data_set, data_loader
 
     def _select_optimizer(self):
-        model_optim = optim.Adam(self.model.parameters(), lr=self.args.learning_rate)
+        weight_decay = getattr(self.args, "weight_decay", 0.0)
+        optimizer_name = getattr(self.args, "optimizer", "adam").lower()
+        if optimizer_name not in ("adam", "adamw"):
+            raise ValueError("optimizer must be adam or adamw")
+        optimizer_class = optim.AdamW if optimizer_name == "adamw" else optim.Adam
+        module = self.model.module if isinstance(self.model, nn.DataParallel) else self.model
+        parameters = self.model.parameters()
+        if hasattr(module, "optimizer_parameter_groups"):
+            parameters = module.optimizer_parameter_groups(weight_decay)
+            for group in parameters:
+                get_logger(__name__).info(
+                    "%s group=%s, parameter tensors=%d, weight_decay=%g",
+                    optimizer_class.__name__, group["group_name"],
+                    len(group["params"]), group["weight_decay"])
+        model_optim = optimizer_class(
+            parameters, lr=self.args.learning_rate, weight_decay=weight_decay)
         return model_optim
 
     def _select_criterion(self):
@@ -41,7 +57,8 @@ class Exp_Long_Term_Forecast(Exp_Basic):
  
 
     def vali(self, vali_data, vali_loader, criterion):
-        total_loss = []
+        total_loss = 0.0
+        total_elements = 0
         self.model.eval()
         with torch.no_grad():
             for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(vali_loader):
@@ -68,11 +85,15 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                 true = batch_y.detach()
 
                 loss = criterion(pred, true)
+                require_finite_loss(loss, f"validation batch={i + 1}")
 
-                total_loss.append(loss.item())
-        total_loss = np.average(total_loss)
+                # MSELoss averages elements; weight the shorter final batch correctly.
+                total_loss += loss.item() * true.numel()
+                total_elements += true.numel()
         self.model.train()
-        return total_loss
+        if not total_elements:
+            raise ValueError("Validation loader contains no target elements.")
+        return total_loss / total_elements
 
     def train(self, setting):
         train_data, train_loader = self._get_data(flag='train')
@@ -90,6 +111,16 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
         model_optim = self._select_optimizer()
         criterion = self._select_criterion()
+        monitor = getattr(self.args, "lag_monitor", False)
+        if monitor:
+            if self.args.model not in ("LagARFormer", "LagARFormerGated", "LagARFormerMemory", "LagARFormerLinear", "LagARFormerMix", "LagARFormerTrendMix", "LagARFormerDualMix", "LagARFormerStableMix"):
+                raise ValueError("--lag_monitor is supported only for LagARFormer")
+            from utils.lag_diagnostics import parameter_metrics, validation_probe
+            probe_count = getattr(self.args, "lag_monitor_samples", 16)
+            if probe_count < 1:
+                raise ValueError("lag_monitor_samples must be positive")
+            log_metrics(validation_probe(self.model, vali_data, probe_count),
+                        step=0, prefix="lag/probe")
 
         if self.args.use_amp:
             scaler = torch.cuda.amp.GradScaler()
@@ -131,6 +162,9 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                     loss = criterion(outputs, batch_y)
                     train_loss.append(loss.item())
 
+                context = f"{self.args.model} epoch={epoch + 1} batch={i + 1}"
+                require_finite_loss(loss, context)
+
                 if (i + 1) % 100 == 0:
                     print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, loss.item()))
                     speed = (time.time() - time_now) / iter_count
@@ -141,10 +175,17 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
                 if self.args.use_amp:
                     scaler.scale(loss).backward()
+                    if monitor and i == 0:
+                        log_metrics(parameter_metrics(self.model, scaler.get_scale()),
+                                    step=epoch + 1, prefix="lag")
                     scaler.step(model_optim)
                     scaler.update()
                 else:
                     loss.backward()
+                    require_finite_gradients(self.model, context)
+                    if monitor and i == 0:
+                        log_metrics(parameter_metrics(self.model),
+                                    step=epoch + 1, prefix="lag")
                     model_optim.step()
 
             print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
@@ -160,6 +201,9 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                 "learning_rate": model_optim.param_groups[0]["lr"],
                 "time/epoch_seconds": time.time() - epoch_time,
             }, step=epoch + 1)
+            if monitor:
+                log_metrics(validation_probe(self.model, vali_data, probe_count),
+                            step=epoch + 1, prefix="lag/probe")
             early_stopping(vali_loss, self.model, path)
             if early_stopping.early_stop:
                 print("Early stopping")

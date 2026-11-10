@@ -1,0 +1,30 @@
+{
+  "repository": "https://github.com/WenjieDu/PyPOTS",
+  "commit": "53b3eac34be9491ac3f28e65ee1993436e9318af",
+  "files": {
+    "backbone.py": {
+      "upstream_path": "pypots/nn/modules/timemixerpp/backbone.py",
+      "upstream_sha256": "58325dbee4739798ea672ee6bef9763650653fd933ed9e9cd36e38787a76f2bf"
+    },
+    "layers.py": {
+      "upstream_path": "pypots/nn/modules/timemixerpp/layers.py",
+      "upstream_sha256": "f76ba2447e7a6ef8f3e1fe630335598f33ba8ea6f87407f74ffb8cbbdf4281de"
+    },
+    "inception.py": {
+      "upstream_path": "pypots/nn/modules/inception/layers.py",
+      "upstream_sha256": "79f05711ed43f00bd94fa65e40e99ffa7f4171348002612b1f4e197cd00a53be"
+    },
+    "revin.py": {
+      "upstream_path": "pypots/nn/modules/revin/layers.py",
+      "upstream_sha256": "596e8d72521c7c174199c0dfd75e64aeadf318095a0bccdc212fb8498fc3afbc"
+    },
+    "attention.py": {
+      "upstream_path": "pypots/nn/modules/transformer/attention.py",
+      "upstream_sha256": "bbd3baf0ed0177ba644c3ee0282a3018fec41bb07e947e2553a5dbafd2a54e6c"
+    },
+    "embedding.py": {
+      "upstream_path": "pypots/nn/modules/transformer/embedding.py",
+      "upstream_sha256": "b9a65268f73729ce348de0beff3a5c470412879ee3d374bf91014f3f25fe210e"
+    }
+  }
+}
